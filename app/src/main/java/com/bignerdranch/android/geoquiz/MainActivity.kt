@@ -3,8 +3,6 @@ package com.bignerdranch.android.geoquiz
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
-import android.view.Gravity
-import android.view.Gravity.TOP
 import android.view.View
 import android.widget.*
 import android.widget.Toast.makeText
@@ -20,12 +18,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var questionTextView: TextView
 
     private val questionBank = LinkedList<Question>(listOf(
-         Question(R.string.question_australia,true),
-         Question(R.string.question_oceans,true),
-         Question(R.string.question_mideast,true),
-         Question(R.string.question_africa,true),
-         Question(R.string.question_americas, true),
-         Question(R.string.question_asia,true)
+         Question(R.string.question_australia,true, false, null),
+         Question(R.string.question_oceans,true, false, null),
+         Question(R.string.question_mideast,false, false, null),
+         Question(R.string.question_africa,false, false, null),
+         Question(R.string.question_americas, true, false, null),
+         Question(R.string.question_asia,true, false, null)
      ))
     private val itr: ListIterator<Question> = questionBank.listIterator(questionBank.size)
 
@@ -46,21 +44,26 @@ class MainActivity : AppCompatActivity() {
 
 
             trueButton.setOnClickListener { view: View ->
+                questionBank[currentIndex].buttonPressed = trueButton
                 checkAnswer(true)
             }
 
             falseButton.setOnClickListener() { view: View ->
+                questionBank[currentIndex].buttonPressed = falseButton
                 checkAnswer(false)
             }
             nextButton.setOnClickListener(){
                 currentIndex = (currentIndex + 1) % questionBank.size
                 updateQuestion()
+                isButtonPressed()
             }
 
             prevButton.setOnClickListener(){
                 if(currentIndex == 0) currentIndex = questionBank.size
                 currentIndex = (currentIndex - 1) % questionBank.size
                 updateQuestion()
+                isButtonPressed()
+
             }
 
             questionTextView.setOnClickListener(){
@@ -102,14 +105,38 @@ class MainActivity : AppCompatActivity() {
     private fun checkAnswer(userAnswer: Boolean){
         val correctAnswer = questionBank[currentIndex].answer
 
-
-        val messageResId = if(userAnswer == correctAnswer){
-            R.string.correct_toast
-
-        } else {
-            R.string.incorrect_toast
+        val messageResId: Int
+        if(userAnswer == correctAnswer){
+            messageResId = R.string.correct_toast
         }
-
+        else{
+            messageResId = R.string.incorrect_toast
+        }
         makeText(this, messageResId, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun isButtonPressed(){
+        val buttonPressed = questionBank[currentIndex].buttonPressed
+        if(buttonPressed != null){
+            disableButton(buttonPressed)
+        }
+        else{
+            trueButton.isEnabled = true
+            trueButton.isClickable = true
+            falseButton.isClickable = true
+            falseButton.isEnabled = true
+
+        }
+    }
+    private fun disableButton(buttonPressed: Button){
+        if(buttonPressed == trueButton){
+            falseButton.isEnabled = false
+            trueButton.isClickable = false
+
+        }
+        else if(buttonPressed == falseButton){
+            trueButton.isEnabled = false
+            falseButton.isClickable = false
+        }
     }
 }

@@ -18,13 +18,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var questionTextView: TextView
 
     private val questionBank = LinkedList<Question>(listOf(
-         Question(R.string.question_australia,true, false, null),
-         Question(R.string.question_oceans,true, false, null),
-         Question(R.string.question_mideast,false, false, null),
-         Question(R.string.question_africa,false, false, null),
-         Question(R.string.question_americas, true, false, null),
-         Question(R.string.question_asia,true, false, null)
-     ))
+         Question(R.string.question_australia,true, null),
+         Question(R.string.question_oceans,true, null),
+         Question(R.string.question_mideast,false, null),
+         Question(R.string.question_africa,false, null),
+         Question(R.string.question_americas, true, null),
+         Question(R.string.question_asia,true,  null)
+    ))
     private val itr: ListIterator<Question> = questionBank.listIterator(questionBank.size)
 
 
@@ -44,26 +44,25 @@ class MainActivity : AppCompatActivity() {
 
 
             trueButton.setOnClickListener { view: View ->
-                questionBank[currentIndex].buttonPressed = trueButton
                 checkAnswer(true)
+                disableButton(trueButton)
             }
 
             falseButton.setOnClickListener() { view: View ->
-                questionBank[currentIndex].buttonPressed = falseButton
                 checkAnswer(false)
+                disableButton(falseButton)
             }
             nextButton.setOnClickListener(){
                 currentIndex = (currentIndex + 1) % questionBank.size
                 updateQuestion()
-                isButtonPressed()
+                disableButton(questionBank[currentIndex].buttonPressed)
             }
 
             prevButton.setOnClickListener(){
                 if(currentIndex == 0) currentIndex = questionBank.size
                 currentIndex = (currentIndex - 1) % questionBank.size
                 updateQuestion()
-                isButtonPressed()
-
+                disableButton(questionBank[currentIndex].buttonPressed)
             }
 
             questionTextView.setOnClickListener(){
@@ -106,6 +105,7 @@ class MainActivity : AppCompatActivity() {
         val correctAnswer = questionBank[currentIndex].answer
 
         val messageResId: Int
+
         if(userAnswer == correctAnswer){
             messageResId = R.string.correct_toast
         }
@@ -115,28 +115,25 @@ class MainActivity : AppCompatActivity() {
         makeText(this, messageResId, Toast.LENGTH_SHORT).show()
     }
 
-    private fun isButtonPressed(){
-        val buttonPressed = questionBank[currentIndex].buttonPressed
-        if(buttonPressed != null){
-            disableButton(buttonPressed)
+    private fun disableButton(buttonWasPressed: Button?){
+        if(buttonWasPressed == trueButton){
+            questionBank[currentIndex].buttonPressed = trueButton
+            trueButton.isClickable = false
+            trueButton.isEnabled = true
+            falseButton.isEnabled = false
+        }
+        else if(buttonWasPressed == falseButton){
+            questionBank[currentIndex].buttonPressed = falseButton
+            falseButton.isClickable = false
+            falseButton.isEnabled = true
+            trueButton.isEnabled = false
         }
         else{
             trueButton.isEnabled = true
             trueButton.isClickable = true
-            falseButton.isClickable = true
             falseButton.isEnabled = true
-
+            falseButton.isClickable = true
         }
     }
-    private fun disableButton(buttonPressed: Button){
-        if(buttonPressed == trueButton){
-            falseButton.isEnabled = false
-            trueButton.isClickable = false
 
-        }
-        else if(buttonPressed == falseButton){
-            trueButton.isEnabled = false
-            falseButton.isClickable = false
-        }
-    }
 }

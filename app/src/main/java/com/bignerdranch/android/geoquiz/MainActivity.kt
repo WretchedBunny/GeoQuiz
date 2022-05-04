@@ -6,9 +6,7 @@ import android.util.Log
 import android.view.View
 import android.widget.*
 import android.widget.Toast.makeText
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
-import java.util.*
 
 private const val TAG = "MainActivity"
 
@@ -18,31 +16,18 @@ class MainActivity : AppCompatActivity() {
     private lateinit var nextButton: ImageButton
     private lateinit var prevButton: ImageButton
     private lateinit var questionTextView: TextView
-    private var  totalAnsweredQuestions: Int = 0
-    private var correctAnsweredQuestions: Int = 0
-
-    private val questionBank = LinkedList<Question>(listOf(
-         Question(R.string.question_australia,true, null),
-         Question(R.string.question_oceans,true, null),
-         Question(R.string.question_mideast,false, null),
-         Question(R.string.question_africa,false, null),
-         Question(R.string.question_americas, true, null),
-         Question(R.string.question_asia,true,  null)
-    ))
-    private val itr: ListIterator<Question> = questionBank.listIterator(questionBank.size)
 
 
-    private var currentIndex = 0
 
+    private val quizViewModel: QuizViewModel by lazy{
+        ViewModelProviders.of(this).get(QuizViewModel::class.java)
+    }
 
         override fun onCreate(savedInstanceState: Bundle?) {
             super.onCreate(savedInstanceState)
             setContentView(R.layout.activity_main)
             Log.d(TAG,"onCreate(Bundle?) called")
 
-            val provider: ViewModelProvider = ViewModelProviders.of(this)
-            val quizViewModel = provider.get(QuizViewModel::class.java)
-            Log.d(TAG,"Got a QuizViewModel: $quizViewModel")
 
             trueButton = findViewById(R.id.true_button)
             falseButton = findViewById(R.id.false_button)
@@ -53,38 +38,37 @@ class MainActivity : AppCompatActivity() {
 
             trueButton.setOnClickListener { view: View ->
                 checkAnswer(true)
-                disableButton(trueButton)
-                totalAnsweredQuestions++
+                disableButton(StatusButtonPressed.TRUE)
+                quizViewModel.totalAnsweredQuestions++
             }
 
-            falseButton.setOnClickListener() { view: View ->
+            falseButton.setOnClickListener { view: View ->
                 checkAnswer(false)
-                disableButton(falseButton)
-                totalAnsweredQuestions++
+                disableButton(StatusButtonPressed.FALSE)
+                quizViewModel.totalAnsweredQuestions++
             }
-            nextButton.setOnClickListener(){
-                currentIndex = (currentIndex + 1) % questionBank.size
+            nextButton.setOnClickListener{
+                quizViewModel.moveToNext()
+               //println("quizViewModel.currentIndex  ==== ${quizViewModel.currentIndex}")
                 updateQuestion()
-                disableButton(questionBank[currentIndex].buttonPressed)
-                showPercentage(totalAnsweredQuestions, correctAnsweredQuestions)
+                disableButton(quizViewModel.currentButtonPressed)
+                showPercentage(quizViewModel.totalAnsweredQuestions, quizViewModel.correctAnsweredQuestions)
             }
 
-            prevButton.setOnClickListener(){
-                if(currentIndex == 0) currentIndex = questionBank.size
-                currentIndex = (currentIndex - 1) % questionBank.size
+            prevButton.setOnClickListener{
+                quizViewModel.moveToPrev()
+                //println("quizViewModel.currentIndex  ==== ${quizViewModel.currentIndex}")
                 updateQuestion()
-                disableButton(questionBank[currentIndex].buttonPressed)
-                showPercentage(totalAnsweredQuestions, correctAnsweredQuestions)
+                disableButton(quizViewModel.currentButtonPressed)
+                showPercentage(quizViewModel.totalAnsweredQuestions, quizViewModel.correctAnsweredQuestions)
             }
 
-            questionTextView.setOnClickListener(){
-            currentIndex = currentIndex--
+            questionTextView.setOnClickListener{
+            quizViewModel.currentIndex--
             updateQuestion()
         }
-
-        val questionTextResId = questionBank[currentIndex].textResId
-        questionTextView.setText(questionTextResId)
-
+            val questionTextResId = quizViewModel.currentQuestionText
+            questionTextView.setText(questionTextResId)
     }
 
     override fun onStart() {
@@ -110,17 +94,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateQuestion(){
-        val questionTextResId = questionBank[currentIndex].textResId
+        val questionTextResId = quizViewModel.currentQuestionText
+        println("questionTextResId  ==== $questionTextResId")
         questionTextView.setText(questionTextResId)
     }
     private fun checkAnswer(userAnswer: Boolean){
-        val correctAnswer = questionBank[currentIndex].answer
+        val correctAnswer = quizViewModel.currentQuestionAnswer
 
         val messageResId: Int
 
         if(userAnswer == correctAnswer){
             messageResId = R.string.correct_toast
-            correctAnsweredQuestions++
+            quizViewModel.correctAnsweredQuestions++
         }
         else{
             messageResId = R.string.incorrect_toast
@@ -128,21 +113,21 @@ class MainActivity : AppCompatActivity() {
         makeText(this, messageResId, Toast.LENGTH_SHORT).show()
     }
 
-    private fun disableButton(buttonWasPressed: Button?){
+    private fun disableButton(buttonWasPressed: StatusButtonPressed){
         when (buttonWasPressed) {
-            trueButton -> {
-                questionBank[currentIndex].buttonPressed = trueButton
+            StatusButtonPressed.TRUE -> {
+                quizViewModel.currentButtonPressed = StatusButtonPressed.TRUE //questionBank[currentIndex].buttonPressed = trueButton
                 trueButton.isClickable = false
                 trueButton.isEnabled = true
                 falseButton.isEnabled = false
             }
-            falseButton -> {
-                questionBank[currentIndex].buttonPressed = falseButton
+            StatusButtonPressed.FALSE -> {
+                quizViewModel.currentButtonPressed = StatusButtonPressed.FALSE
                 falseButton.isClickable = false
                 falseButton.isEnabled = true
                 trueButton.isEnabled = false
             }
-            else -> {
+            StatusButtonPressed.NOT_PRESSED -> {
                 trueButton.isEnabled = true
                 trueButton.isClickable = true
                 falseButton.isEnabled = true

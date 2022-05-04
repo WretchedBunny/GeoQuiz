@@ -1,6 +1,11 @@
 package com.bignerdranch.android.geoquiz
 
-import android.widget.Button
+import com.bignerdranch.android.geoquiz.StatusButtonPressed
 import androidx.annotation.StringRes
 
-data class Question(@StringRes val textResId: Int, val answer: Boolean, var buttonPressed: Button?)
+enum class StatusButtonPressed{
+    TRUE,
+    FALSE,
+    NOT_PRESSED
+}
+data class Question(@StringRes val textResId: Int, val answer: Boolean, var buttonPressed: StatusButtonPressed = StatusButtonPressed.NOT_PRESSED)

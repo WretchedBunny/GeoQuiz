@@ -37,6 +37,15 @@
 
         </LinearLayout>
 
+    <Button
+        android:id="@+id/cheat_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:gravity="center"
+        android:text="@string/cheat_button"
+        android:visibility="visible" />
+
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

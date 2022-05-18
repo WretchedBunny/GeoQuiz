@@ -8,4 +8,4 @@ enum class StatusButtonPressed{
     FALSE,
     NOT_PRESSED
 }
-data class Question(@StringRes val textResId: Int, val answer: Boolean, var buttonPressed: StatusButtonPressed = StatusButtonPressed.NOT_PRESSED)
+data class Question(@StringRes val textResId: Int, val answer: Boolean, var buttonPressed: StatusButtonPressed = StatusButtonPressed.NOT_PRESSED, var hasCheated: Boolean = false)

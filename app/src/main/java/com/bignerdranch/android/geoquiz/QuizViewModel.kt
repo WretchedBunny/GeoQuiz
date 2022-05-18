@@ -15,10 +15,10 @@ class QuizViewModel: ViewModel() {
         Question(R.string.question_americas, true ),
         Question(R.string.question_asia,true)
     ))
-    var  totalAnsweredQuestions: Int = 0
+    var totalAnsweredQuestions: Int = 0
     var correctAnsweredQuestions: Int = 0
-
     var currentIndex = 0
+    var isCheater = false
 
     val currentQuestionAnswer: Boolean
         get() = questionBank[currentIndex].answer

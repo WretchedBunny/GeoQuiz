@@ -1,5 +1,7 @@
 package com.bignerdranch.android.geoquiz
 
+import android.app.Activity
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
@@ -10,11 +12,14 @@ import androidx.lifecycle.ViewModelProviders
 
 private const val TAG = "MainActivity"
 
+private const val REQUEST_CODE_CHEAT = 0
+
 class MainActivity : AppCompatActivity() {
     private lateinit var trueButton: Button
     private lateinit var falseButton: Button
     private lateinit var nextButton: ImageButton
     private lateinit var prevButton: ImageButton
+    private lateinit var cheatButton: Button
     private lateinit var questionTextView: TextView
 
 
@@ -28,15 +33,15 @@ class MainActivity : AppCompatActivity() {
             setContentView(R.layout.activity_main)
             Log.d(TAG,"onCreate(Bundle?) called")
 
-
             trueButton = findViewById(R.id.true_button)
             falseButton = findViewById(R.id.false_button)
             nextButton = findViewById(R.id.next_button)
             prevButton = findViewById(R.id.previous_button)
+            cheatButton = findViewById(R.id.cheat_button)
             questionTextView = findViewById(R.id.question_text_view)
 
 
-            trueButton.setOnClickListener { view: View ->
+            trueButton.setOnClickListener {
                 checkAnswer(true)
                 disableButton(StatusButtonPressed.TRUE)
                 quizViewModel.totalAnsweredQuestions++
@@ -49,7 +54,6 @@ class MainActivity : AppCompatActivity() {
             }
             nextButton.setOnClickListener{
                 quizViewModel.moveToNext()
-               //println("quizViewModel.currentIndex  ==== ${quizViewModel.currentIndex}")
                 updateQuestion()
                 disableButton(quizViewModel.currentButtonPressed)
                 showPercentage(quizViewModel.totalAnsweredQuestions, quizViewModel.correctAnsweredQuestions)
@@ -61,6 +65,13 @@ class MainActivity : AppCompatActivity() {
                 updateQuestion()
                 disableButton(quizViewModel.currentButtonPressed)
                 showPercentage(quizViewModel.totalAnsweredQuestions, quizViewModel.correctAnsweredQuestions)
+            }
+
+            cheatButton.setOnClickListener(){
+                //start cheatActivity
+                val correctAnswer = quizViewModel.currentQuestionAnswer
+                val intent = CheatActivity.newIntent(this,correctAnswer)
+                startActivityForResult(intent, REQUEST_CODE_CHEAT)
             }
 
             questionTextView.setOnClickListener{
@@ -78,12 +89,15 @@ class MainActivity : AppCompatActivity() {
     override fun onResume(){
         super.onResume()
         Log.d(TAG, "onResume() called")
+        disableButton(quizViewModel.currentButtonPressed)
     }
 
     override fun onPause() {
         super.onPause()
         Log.d(TAG,"onResume() called")
     }
+
+
     override fun onStop() {
         super.onStop()
         Log.d(TAG, "onStop() called")
@@ -93,22 +107,37 @@ class MainActivity : AppCompatActivity() {
         Log.d(TAG, "onDestroy() called")
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        Log.d(TAG, "onActivityResult() called")
+
+        if(resultCode == Activity.RESULT_OK){
+            Log.d(TAG, "onActivityResult(), RESULT_OK called")
+            return
+        }
+
+        if(resultCode == REQUEST_CODE_CHEAT) {
+            quizViewModel.isCheater = data?.getBooleanExtra(EXTRA_ANSWER_SHOWN, false) ?: false
+            quizViewModel.currentButtonPressed = data?.getSerializableExtra(EXTRA_BUTTON_PRESSED) as StatusButtonPressed
+            Log.d(TAG, "onActivityResult(), RequestCodeCheat called")
+        }
+    }
+
     private fun updateQuestion(){
         val questionTextResId = quizViewModel.currentQuestionText
-        println("questionTextResId  ==== $questionTextResId")
         questionTextView.setText(questionTextResId)
     }
     private fun checkAnswer(userAnswer: Boolean){
         val correctAnswer = quizViewModel.currentQuestionAnswer
 
-        val messageResId: Int
-
-        if(userAnswer == correctAnswer){
-            messageResId = R.string.correct_toast
-            quizViewModel.correctAnsweredQuestions++
-        }
-        else{
-            messageResId = R.string.incorrect_toast
+        val messageResId: Int = when {
+            quizViewModel.isCheater -> R.string.judgment_toast
+            userAnswer == correctAnswer -> {
+                quizViewModel.correctAnsweredQuestions++
+                R.string.correct_toast
+            }
+            else ->
+                R.string.incorrect_toast
         }
         makeText(this, messageResId, Toast.LENGTH_SHORT).show()
     }

@@ -18,7 +18,20 @@ class QuizViewModel: ViewModel() {
     var totalAnsweredQuestions: Int = 0
     var correctAnsweredQuestions: Int = 0
     var currentIndex = 0
-    var isCheater = false
+    var totalCheatTokens: Int = 3
+        set(cheatToken: Int){
+            if(field < 0){
+                return
+            }
+            field -= cheatToken
+        }
+
+
+    var currentCheatState: Boolean
+        get() = questionBank[currentIndex].hasCheated
+        set(hasCheated: Boolean){
+            questionBank[currentIndex].hasCheated = hasCheated
+        }
 
     val currentQuestionAnswer: Boolean
         get() = questionBank[currentIndex].answer

@@ -15,11 +15,15 @@ freshwater lake.</string>
     <string name="false_button">False</string>
     <string name="correct_toast">Correct!</string>
     <string name="incorrect_toast">Incorrect!</string>
+    <string name="smth_wrong">You must not see that</string>
     <string name="next_button">Next</string>
     <string name="previous_button">Prev</string>
     <string name="warning_text">Are you sure you want to do this?</string>
     <string name="show_answer_button">Show Answer</string>
     <string name="cheat_button">Cheat!</string>
     <string name="judgment_toast">Cheating is wrong</string>
+    <string name="api_text">API Level: %d</string>
+    <string name="cheat_tokens_left">Cheat tokens left: %d</string>
+    <string name="no_cheat_tokens_left">Sorry, but you have used up all tokens.</string>
 
 </resources>

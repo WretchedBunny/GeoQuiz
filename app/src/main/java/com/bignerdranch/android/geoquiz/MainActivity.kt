@@ -1,7 +1,10 @@
 package com.bignerdranch.android.geoquiz
 
+import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.ActivityOptions
 import android.content.Intent
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
@@ -11,7 +14,7 @@ import android.widget.Toast.makeText
 import androidx.lifecycle.ViewModelProviders
 
 private const val TAG = "MainActivity"
-
+private const val TAG_CHEATER = "Cheate state"
 private const val REQUEST_CODE_CHEAT = 0
 
 class MainActivity : AppCompatActivity() {
@@ -28,6 +31,7 @@ class MainActivity : AppCompatActivity() {
         ViewModelProviders.of(this).get(QuizViewModel::class.java)
     }
 
+        @SuppressLint("RestrictedApi")
         override fun onCreate(savedInstanceState: Bundle?) {
             super.onCreate(savedInstanceState)
             setContentView(R.layout.activity_main)
@@ -57,6 +61,7 @@ class MainActivity : AppCompatActivity() {
                 updateQuestion()
                 disableButton(quizViewModel.currentButtonPressed)
                 showPercentage(quizViewModel.totalAnsweredQuestions, quizViewModel.correctAnsweredQuestions)
+                checkCheater()
             }
 
             prevButton.setOnClickListener{
@@ -65,13 +70,24 @@ class MainActivity : AppCompatActivity() {
                 updateQuestion()
                 disableButton(quizViewModel.currentButtonPressed)
                 showPercentage(quizViewModel.totalAnsweredQuestions, quizViewModel.correctAnsweredQuestions)
+                checkCheater()
             }
 
-            cheatButton.setOnClickListener(){
+
+            cheatButton.setOnClickListener(){ view ->
                 //start cheatActivity
+                //Log.d(TAG,"AAAAAAAAAAAAA ${quizViewModel.totalCheatTokens}")
+
+                disableButton(StatusButtonPressed.СHEAT)
                 val correctAnswer = quizViewModel.currentQuestionAnswer
                 val intent = CheatActivity.newIntent(this,correctAnswer)
-                startActivityForResult(intent, REQUEST_CODE_CHEAT)
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    val options = ActivityOptions.makeClipRevealAnimation(view, 0, 0, view.width, view.height)
+                    startActivityForResult(intent, REQUEST_CODE_CHEAT, options.toBundle())
+                } else {
+                    startActivityForResult(intent, REQUEST_CODE_CHEAT)
+                }
             }
 
             questionTextView.setOnClickListener{
@@ -90,14 +106,12 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         Log.d(TAG, "onResume() called")
         disableButton(quizViewModel.currentButtonPressed)
+        disableButton(StatusButtonPressed.СHEAT)
     }
-
     override fun onPause() {
         super.onPause()
         Log.d(TAG,"onResume() called")
     }
-
-
     override fun onStop() {
         super.onStop()
         Log.d(TAG, "onStop() called")
@@ -117,8 +131,9 @@ class MainActivity : AppCompatActivity() {
         }
 
         if(resultCode == REQUEST_CODE_CHEAT) {
-            quizViewModel.isCheater = data?.getBooleanExtra(EXTRA_ANSWER_SHOWN, false) ?: false
-            quizViewModel.currentButtonPressed = data?.getSerializableExtra(EXTRA_BUTTON_PRESSED) as StatusButtonPressed
+            quizViewModel.currentCheatState = data?.getBooleanExtra(EXTRA_ANSWER_SHOWN, false) ?: false
+            quizViewModel.currentButtonPressed = (data?.getSerializableExtra(EXTRA_BUTTON_PRESSED) ?: StatusButtonPressed.NOT_PRESSED) as StatusButtonPressed
+            quizViewModel.totalCheatTokens = 1
             Log.d(TAG, "onActivityResult(), RequestCodeCheat called")
         }
     }
@@ -130,22 +145,28 @@ class MainActivity : AppCompatActivity() {
     private fun checkAnswer(userAnswer: Boolean){
         val correctAnswer = quizViewModel.currentQuestionAnswer
 
-        val messageResId: Int = when {
-            quizViewModel.isCheater -> R.string.judgment_toast
-            userAnswer == correctAnswer -> {
+        val messageResId: Int = when (userAnswer) {
+            correctAnswer -> {
                 quizViewModel.correctAnsweredQuestions++
                 R.string.correct_toast
             }
-            else ->
-                R.string.incorrect_toast
+            else -> {R.string.incorrect_toast}
         }
         makeText(this, messageResId, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun checkCheater(){
+        Log.d(TAG_CHEATER, "${quizViewModel.currentCheatState} Current index: ${quizViewModel.currentIndex}")
+        val isCheater = quizViewModel.currentCheatState
+        if(isCheater){
+            makeText(this, R.string.judgment_toast, Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun disableButton(buttonWasPressed: StatusButtonPressed){
         when (buttonWasPressed) {
             StatusButtonPressed.TRUE -> {
-                quizViewModel.currentButtonPressed = StatusButtonPressed.TRUE //questionBank[currentIndex].buttonPressed = trueButton
+                quizViewModel.currentButtonPressed = StatusButtonPressed.TRUE
                 trueButton.isClickable = false
                 trueButton.isEnabled = true
                 falseButton.isEnabled = false
@@ -162,7 +183,16 @@ class MainActivity : AppCompatActivity() {
                 falseButton.isEnabled = true
                 falseButton.isClickable = true
             }
+            StatusButtonPressed.СHEAT -> {
+                if(quizViewModel.totalCheatTokens <= 0) {
+                    cheatButton.isEnabled = false
+                    cheatButton.isClickable = true
+                    makeText(this, R.string.no_cheat_tokens_left, Toast.LENGTH_SHORT).show()
+                }
+            }
+
         }
+
     }
     private fun showPercentage(totalAnswered: Int, correctAnsweredQuestions: Int){
         if(totalAnswered == 6){
